@@ -18,6 +18,7 @@ for the analog circuitry, coupling capacitors, tone networks, VREF and TIM:
 | D7 | LC75347E CL, pin 38 |
 | D8 | LC75347E DI, pin 39 |
 | D9 | LC75347E CE, pin 40 |
+| D11 | LC75347E MUTE, pin 35; LOW=mute, HIGH=release |
 | GND | LC75347E VSS, pin 41; encoder commons, button returns and LCD ground |
 | D2 / D4 | Volume encoder A / B |
 | D6 | Volume encoder push button |
@@ -32,9 +33,16 @@ capacitor to VSS as in the application circuit. Power the LCD and its adapter
 at their specified voltage. The fitted LCD is a Winstar WH1602L-TMI-JT#,
 16 characters by two lines, with an external I2C adapter.
 
-The sketch does **not** drive the external MUTE pin. Hold LC75347E MUTE
-(pin 35) HIGH for normal operation, within the datasheet's logic limits.
-Audio muting in the controls below uses the volume data sent to the processor.
+Connect **Arduino D11 to LC75347E MUTE, pin 35**. This input is active LOW.
+The controller uses both this hardware mute and the mute values in the serial
+data. When unmuting, it sends the requested levels before releasing MUTE,
+then sends them again after MUTE goes HIGH. Startup holds MUTE LOW during
+initialization; Serial `r` also leaves it LOW until `u` is sent.
+
+During reset/bootloader time, the Uno has not yet driven D11. Arrange the
+external MUTE bias or amplifier sequencing for that interval; the sketch
+cannot hold a GPIO LOW before it starts. Do not tie MUTE directly to the
+supply when connecting it to the Arduino output.
 
 Each encoder phase has its own **10 nF capacitor to ground**:
 four capacitors across two encoders. Encoder and button inputs use internal
@@ -115,7 +123,7 @@ readback: the printed state is what the controller requested.
 | `v 96` | Turn all channels off |
 | `c fl 40` | Set one channel's attenuation; names: `fl fr c rl rr sbw` |
 | `c fl 96` | Turn one channel off |
-| `m` / `u` | Mute / unmute without discarding requested levels |
+| `m` / `u` | Hardware and data mute / unmute, retaining requested levels |
 | `b 4` / `t -2` | Bass / treble, -12 to +12 dB in steps of 2 |
 | `bal 6` | Front balance, -24 to +24 |
 | `p 0` / `p 1` | Select direct front inputs / tone path |

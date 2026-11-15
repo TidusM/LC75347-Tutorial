@@ -10,6 +10,7 @@
 constexpr uint8_t PIN_CL = 7;
 constexpr uint8_t PIN_DI = 8;
 constexpr uint8_t PIN_CE = 9;
+constexpr uint8_t PIN_MUTE = 11; // LC75347E pin 35; LOW=mute.
 constexpr unsigned int EDGE_US = 5;
 
 lc75347::State state = lc75347::initialState();
@@ -60,7 +61,15 @@ void transmit() {
   delayMicroseconds(EDGE_US);
 }
 
+void releaseHardwareMute() {
+  digitalWrite(PIN_MUTE, HIGH);
+  delayMicroseconds(EDGE_US);
+  // Apply the requested levels again after releasing external mute.
+  transmit();
+}
+
 void initializeChip(bool startUnmuted = false) {
+  digitalWrite(PIN_MUTE, LOW);
   muted = true;
   state = lc75347::initialState();
   state.tonePath = true; // Front tone circuitry enabled by default; bass/treble start flat.
@@ -74,7 +83,8 @@ void initializeChip(bool startUnmuted = false) {
   delay(100);
   if (startUnmuted) {
     muted = false;
-    transmit();
+    transmit(); // Latch the starting levels while hardware mute is active.
+    releaseHardwareMute();
   }
 }
 
@@ -98,7 +108,7 @@ void help() {
   Serial.println(F("master N: master attenuation 0..95 dB; preserve channel offsets"));
   Serial.println(F("v N: all channels 0..95 dB; 96=off; reset offsets/balance"));
   Serial.println(F("c CH N: CH=sbw rr rl c fr fl; attenuation 0..95; 96=off"));
-  Serial.println(F("m/u: mute/unmute; r: reset muted; s: settings; h: help"));
+  Serial.println(F("m/u: hardware + data mute/unmute; r: reset muted; s: settings; h: help"));
   Serial.println(F("b/t N: bass/treble -12..12 dB in steps of 2"));
   Serial.println(F("bal N: front balance -24..24; positive=right"));
   Serial.println(F("p 0|1: front tone bypass/enable; z 0|1: zero-cross off/on"));
@@ -142,8 +152,10 @@ void applyLevels() {
 }
 
 void setMuted(bool value) {
+  if (value) digitalWrite(PIN_MUTE, LOW);
   muted = value;
   transmit();
+  if (!value) releaseHardwareMute();
   displayDirty = true;
 }
 
@@ -317,13 +329,14 @@ void command(char *input) {
   int a = 0, b = 0;
   bool ok = false;
   bool send = false;
+  bool releaseMute = false;
   if (!extra) {
     if (!first && strlen(cmd) == 1) {
       switch (*cmd) {
         case 'm':
-          muted = true; ok = send = true; break;
+          digitalWrite(PIN_MUTE, LOW); muted = true; ok = send = true; break;
         case 'u':
-          muted = false; ok = send = true; break;
+          muted = false; releaseMute = true; ok = send = true; break;
         case 'r': initializeChip(); ok = true; break;
         case 's': ok = true; break;
         case 'h': help(); return;
@@ -375,12 +388,13 @@ void command(char *input) {
   editing = false;
   audio.sync(state);
   if (send) transmit();
+  if (releaseMute) releaseHardwareMute();
   displayDirty = true;
   showState();
 }
 
 void setup() {
-  const uint8_t pins[] = {PIN_CE, PIN_CL, PIN_DI};
+  const uint8_t pins[] = {PIN_MUTE, PIN_CE, PIN_CL, PIN_DI};
   for (uint8_t i = 0; i < sizeof(pins); ++i) {
     digitalWrite(pins[i], LOW);
     pinMode(pins[i], OUTPUT);
