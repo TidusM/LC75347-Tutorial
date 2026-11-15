@@ -90,7 +90,6 @@ first run. Settings are held in RAM; restarting restores these defaults.
 The Serial `r` command resets to the same defaults but stays muted until `u`.
 
 The sketch has passed an Uno-target build and simulated control/frame checks.
-This cleaned version has not been tested on the assembled circuit.
 
 In [Config.h](LC75347_Controller/Config.h), match the adapter's I2C address
 (default `0x3F`) and encoder direction/detent settings. The LCD driver assumes
