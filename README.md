@@ -89,8 +89,6 @@ bass/treble, tone path on and zero-cross off. Keep amplifier gain low for the
 first run. Settings are held in RAM; restarting restores these defaults.
 The Serial `r` command resets to the same defaults but stays muted until `u`.
 
-The sketch has passed an Uno-target build and simulated control/frame checks.
-
 In [Config.h](LC75347_Controller/Config.h), match the adapter's I2C address
 (default `0x3F`) and encoder direction/detent settings. The LCD driver assumes
 P0=RS, P1=RW, P2=E, P3=backlight and P4..P7=LCD D4..D7. Backpacks with a
