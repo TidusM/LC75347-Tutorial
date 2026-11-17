@@ -24,8 +24,8 @@ for the analog circuitry, coupling capacitors, tone networks, VREF and TIM:
 | D6 | Volume encoder push button |
 | D3 / D5 | Settings encoder A / B |
 | D12 | Settings encoder push button |
-| A4 / SDA | LCD adapter SDA |
-| A5 / SCL | LCD adapter SCL |
+| A4 / SDA | LCD adapter SDA (Apply 2,2k to the VDD) |
+| A5 / SCL | LCD adapter SCL (Apply 2,2k to the VDD) |
 
 Power the processor at **5 V on VDD, pin 37**, with its supply decoupling.
 VREF is an approximately half-supply reference, not ground; connect its 22 uF
